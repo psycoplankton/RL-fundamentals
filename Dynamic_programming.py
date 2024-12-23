@@ -118,6 +118,38 @@ def evaluatePolicy(grid, V, policy, GAMMA, THETA):
     print(i, 'sweeps of state space in policy evaluation')
     return V
     
+def improvePolicy(grid, V, policy, GAMMA):
+    stable = False
+    newPolicy = {}
+    i = 0
+    for state in grid.stateSpace:
+        i += 1
+        oldActions = policy[state]
+        value = []
+        newAction = []
+        for action in policy[state]: #for each action in a state according to a policy
+            weight = 1/len(policy[state]) #number of possible actions\
+            for key in grid.P: #for each tuple of (newstate, reward, oldstate, action) in transition probability space
+                (newstate, reward, oldstate, act) = key #open all the variables
+
+                # these variables contain all the possible states and rewards, so we will right now
+                # only use the probabilites for the current state and currenta action
+                if oldstate == state and act == action:
+                    value.append(np.round(weight*grid.P[key]*(reward + GAMMA*V[newstate]), 2))
+                    newAction.append(action)
+        
+        value = np.array(value)
+        best = np.where(value == value.max())[0]
+        bestActions = [newAction[item] for item in best] #best actions are where value is maximized
+
+        newPolicy[state] = bestActions
+
+        if oldActions != bestActions:
+            stable = False
+        
+    print(i, 'sweeps of state spaces in policy improvement')
+    return 
+
 if __name__ == '__main__':
     magicSquares = {18: 54, 63: 14}
     env = GridWorld(9, 9, magicSquares)
@@ -134,6 +166,11 @@ if __name__ == '__main__':
     for state in env.stateSpace:
         policy[state] =  env.possibleAction
 
-    V = evaluatePolicy(env, V, policy, GAMMA, THETA)  
+    stable =False
+    while not stable:
+
+        V = evaluatePolicy(env, V, policy, GAMMA, THETA)  
+        stable, policy = improvePolicy(env, V, policy, GAMMA)
     print(V, env)
+    printPolicy(V, env)
 
